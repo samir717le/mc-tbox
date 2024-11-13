@@ -52,9 +52,9 @@ function check_system_compatibility {
 function configure_playit {
     echo "[INFO] Configuring Playit..."
     if [[ -z "$playit_token" ]]; then
-        read -p "Please provide your Playit token: " playit_token
+        read -p "Please provide your Playit token/claim code: " playit_token
     fi
-    playit-cli claim --secret "$playit_token" || { echo "[ERROR] Playit configuration failed"; exit 1; }
+    playit-cli claim url "$playit_token" || { echo "[ERROR] Playit configuration failed"; exit 1; }
 }
 
 # Configure Email Notifications
