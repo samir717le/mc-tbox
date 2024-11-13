@@ -29,7 +29,9 @@
 
 3. **Download the Script**:
    - Install by curl:
-     ```bash curl https://letsedit.cloudns.be/mc-tbox/mc-tbox.sh | bash ```
+     ```bash
+     curl https://letsedit.cloudns.be/mc-tbox/mc-tbox.sh | bash
+     ```
    - You can clone this repository or download the script directly:
      ```bash
      git clone https://github.com/samir717le/mc-tbox.git
