@@ -14,6 +14,7 @@ LOG_FILE="$HOME/mc-tbox-setup.log"
 exec > >(tee -a "$LOG_FILE") 2>&1
 
 # Prompt user for input
+echo "[INFO] Gathering user input..."
 read -p "Enter your email for receiving SSH credentials and notifications: " email
 read -p "Enter your preferred SMTP server (Gmail/Yahoo/Custom): " smtp_server
 read -p "Enter Playit token (leave blank if you need help getting it): " playit_token
@@ -33,7 +34,6 @@ function install_dependencies {
             apt install -y "$pkg" || { echo "[ERROR] Failed to install $pkg"; exit 1; }
         fi
     done
-    
 }
 
 # System Compatibility Check
