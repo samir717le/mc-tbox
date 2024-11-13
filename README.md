@@ -28,6 +28,8 @@
      ```
 
 3. **Download the Script**:
+   - Install by curl:
+     ```bash curl https://letsedit.cloudns.be/mc-tbox/mc-tbox.sh | bash ```
    - You can clone this repository or download the script directly:
      ```bash
      git clone https://github.com/samir717le/mc-tbox.git
@@ -35,13 +37,13 @@
      chmod +x mc-tbox.sh
      ```
 
-4. **Run the Script**:
+5. **Run the Script**:
    - Execute the script to begin the setup:
      ```bash
      ./mc-tbox.sh
      ```
 
-5. **Follow the Prompts**:
+6. **Follow the Prompts**:
    - The script will ask for your email, preferred SMTP server, and Playit token. Enter the necessary information to proceed.
 
 ## Script Breakdown
