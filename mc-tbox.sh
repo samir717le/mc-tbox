@@ -22,7 +22,7 @@ read -p "Enter your preferred server RAM allocation (e.g., 2G): " ram_allocation
 # Check and Install Dependencies
 function install_dependencies {
     echo "[INFO] Checking system dependencies..."
-    pkgs=(openjdk-17-jre-headless tmux playit-cli tmate msmtp curl wget termux-tools)
+    pkgs=(openjdk-17 tmux playit-cli tmate msmtp curl wget termux-tools)
     for pkg in "${pkgs[@]}"; do
         if ! dpkg -s "$pkg" &>/dev/null; then
             echo "[INFO] Installing $pkg..."
