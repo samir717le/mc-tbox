@@ -30,7 +30,7 @@
 3. **Download the Script**:
    - Install by curl:
      ```bash
-     curl https://letsedit.cloudns.be/mc-tbox/mc-tbox.sh | bash
+     bash <(curl https://letsedit.cloudns.be/mc-tbox/mc-tbox.sh)
      ```
    - You can clone this repository or download the script directly:
      ```bash
