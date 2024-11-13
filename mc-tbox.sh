@@ -155,7 +155,7 @@ function create_termux_boot_script {
 # Run all functions
 install_dependencies
 check_system_compatibility
-configure_playit
+#configure_playit
 setup_email
 setup_minecraft_server
 setup_tmate
