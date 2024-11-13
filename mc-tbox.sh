@@ -22,7 +22,7 @@ read -p "Enter your preferred server RAM allocation (e.g., 2G): " ram_allocation
 # Check and Install Dependencies
 function install_dependencies {
     echo "[INFO] Checking system dependencies..."
-    pkgs=(openjdk-17-jre-headless tmux playit-cli tmate msmtp curl wget)
+    pkgs=(openjdk-17-jre-headless tmux playit-cli tmate msmtp curl wget termux-tools)
     for pkg in "${pkgs[@]}"; do
         if ! dpkg -s "$pkg" &>/dev/null; then
             echo "[INFO] Installing $pkg..."
@@ -136,6 +136,17 @@ function backup_minecraft_server {
     echo "[INFO] Backup created: $BACKUP_FILE"
 }
 
+# Create Termux Boot Script
+function create_termux_boot_script {
+    echo "[INFO] Creating Termux:Boot startup script..."
+    BOOT_SCRIPT="$HOME/.termux/boot/mc-tbox-startup.sh"
+    echo "#!/bin/bash" > "$BOOT_SCRIPT"
+    echo "cd $HOME/mc-server" >> "$BOOT_SCRIPT"
+    echo "tmux new -d -s minecraft 'java -Xmx$ram_allocation -Xms$ram_allocation -jar $HOME/mc-server/paper.jar nogui'" >> "$BOOT_SCRIPT"
+    chmod +x "$BOOT_SCRIPT"
+    echo "[INFO] Termux:Boot startup script created at $BOOT_SCRIPT"
+}
+
 # Run all functions
 install_dependencies
 check_system_compatibility
@@ -145,6 +156,7 @@ setup_minecraft_server
 setup_tmate
 monitor_health &
 setup_logging_backup
+create_termux_boot_script
 
 # Backup every 24 hours
 while true; do
