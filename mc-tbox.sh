@@ -200,7 +200,7 @@ function create_termux_boot_script {
 }
 
 # Run all functions
-inf_check
+conf_inf
 install_dependencies
 check_system_compatibility
 #configure_playit
