@@ -1,20 +1,27 @@
 #!/bin/bash
 
+# Color definitions for terminal output
+CYAN='\033[0;36m'
+GREEN='\033[0;32m'
+RED='\033[0;31m'
+YELLOW='\033[0;33m'
+RESET='\033[0m'
+
 # ASCII Art Header
 clear
-echo -e "\033[1;32m"
+echo -e "${GREEN}"
 echo "###########################################################"
 echo "#                    mc-tbox: Advanced Minecraft Server Setup  #"
 echo "#                      With Playit & Tmate                 #"
 echo "###########################################################"
-echo -e "\033[0m"
+echo -e "${RESET}"
 
 # Log file setup
 LOG_FILE="$HOME/mc-tbox-setup.log"
 exec > >(tee -a "$LOG_FILE") 2>&1
 
 # Prompt user for input
-echo "[INFO] Gathering user input..."
+echo -e "${CYAN}[INFO]${RESET} Gathering user input..."
 read -p "Enter your email for receiving SSH credentials and notifications: " email
 read -p "Enter your preferred SMTP server (gmail/yahoo/custom): " smtp_server
 read -p "Enter Playit token (leave blank if you need help getting it): " playit_token
@@ -24,7 +31,7 @@ read -p "Enter your preferred server RAM allocation (e.g., 2G): " ram_allocation
 # Confirm information
 function conf_info {
     clear
-    echo "Information Confirmation"
+    echo -e "${CYAN}[INFO]${RESET} Information Confirmation"
     echo "SSH & Notification Info E-mail: $email"
     echo "SMTP Server: $smtp_server"
     echo "Playit Token: $playit_token"
@@ -41,47 +48,50 @@ function conf_info {
 
 # Check and Install Dependencies
 function install_dependencies {
-    echo "[INFO] Checking system dependencies..."
+    echo -e "${CYAN}[INFO]${RESET} Checking system dependencies..."
     if ! dpkg -s "tur-repo" &>/dev/null; then
-        echo "[INFO] Installing tur-repo..."
-        apt install -y "tur-repo" || { echo "[ERROR] Failed to install tur-repo"; exit 1; }
+        echo -e "${CYAN}[INFO]${RESET} Installing tur-repo..."
+        apt install -y "tur-repo" || { echo -e "${RED}[ERROR]${RESET} Failed to install tur-repo"; exit 1; }
     fi
     pkgs=(openjdk-17 tmux playit tmate msmtp curl wget termux-tools jq)
     for pkg in "${pkgs[@]}"; do
         if ! dpkg -s "$pkg" &>/dev/null; then
-            echo "[INFO] Installing $pkg..."
-            apt install -y "$pkg" || { echo "[ERROR] Failed to install $pkg"; exit 1; }
+            echo -e "${CYAN}[INFO]${RESET} Installing $pkg..."
+            apt install -y "$pkg" || { echo -e "${RED}[ERROR]${RESET} Failed to install $pkg"; exit 1; }
         fi
     done
 }
 
 # System Compatibility Check
 function check_system_compatibility {
-    echo "[INFO] Checking system resources..."
+    echo -e "${CYAN}[INFO]${RESET} Checking system resources..."
     RAM=$(free -m | awk '/^Mem:/{print $2}')
     CORES=$(nproc)
-    echo "[INFO] Available RAM: $RAM MB"
-    echo "[INFO] CPU Cores: $CORES"
+    echo -e "${CYAN}[INFO]${RESET} Available RAM: $RAM MB"
+    echo -e "${CYAN}[INFO]${RESET} CPU Cores: $CORES"
     if [[ $RAM -lt 2048 ]]; then
-        echo "[WARNING] Less than 2GB RAM may lead to performance issues."
+        echo -e "${YELLOW}[WARNING]${RESET} Less than 2GB RAM may lead to performance issues."
     fi
 }
 
 # Setup Playit Tunnel
 function configure_playit {
-    echo "[INFO] Configuring Playit..."
+    echo -e "${CYAN}[INFO]${RESET} Configuring Playit..."
     if [[ -z "$playit_token" ]]; then
         read -p "Please provide your Playit token/claim code: " playit_token
     fi
-    playit-cli claim url "$playit_token" || { echo "[ERROR] Playit configuration failed"; exit 1; }
+    playit-cli claim url "$playit_token" || { echo -e "${RED}[ERROR]${RESET} Playit configuration failed"; exit 1; }
 }
 
 # Configure Email Notifications
 function setup_email {
-    echo "[INFO] Setting up email notifications..."
+    echo -e "${CYAN}[INFO]${RESET} Setting up email notifications..."
+    # Clear any existing msmtp configuration to avoid duplicates
+    rm -f ~/.msmtprc
+
     case $smtp_server in
         "gmail")
-            echo "[INFO] Configuring Gmail SMTP..."
+            echo -e "${CYAN}[INFO]${RESET} Configuring Gmail SMTP..."
             read -p "Enter your Gmail user/email: " guser
             read -p "Enter Your Gmail password/app password: " gpass
             echo "
@@ -98,7 +108,7 @@ account default : default
             " > ~/.msmtprc
             ;;
         "yahoo")
-            echo "[INFO] Configuring Yahoo SMTP..."
+            echo -e "${CYAN}[INFO]${RESET} Configuring Yahoo SMTP..."
             read -p "Enter your Yahoo user/email: " yuser
             read -p "Enter Your Yahoo password/app password: " ypass
             echo "
@@ -110,8 +120,6 @@ user $yuser
 password $ypass
 tls on
 tls_trust_file /data/data/com.termux/files/usr/etc/tls/cert.pem
-
-account default : default
             " > ~/.msmtprc
             ;;
         "custom")
@@ -133,7 +141,7 @@ account default : default
             " > ~/.msmtprc
             ;;
         *)
-            echo "[ERROR] Unsupported SMTP server"; exit 1;
+            echo -e "${RED}[ERROR]${RESET} Unsupported SMTP server"; exit 1;
             ;;
     esac
     chmod 600 ~/.msmtprc
@@ -141,7 +149,7 @@ account default : default
 
 # Setup Minecraft Server with Tmux
 function setup_minecraft_server {
-    echo "[INFO] Setting up Minecraft server..."
+    echo -e "${CYAN}[INFO]${RESET} Setting up Minecraft server..."
     SERVER_DIR="$HOME/mc-server"
     if [[ ! -d "$SERVER_DIR" ]]; then
         mkdir -p "$SERVER_DIR"
@@ -155,20 +163,26 @@ function setup_minecraft_server {
             PAPERMC_URL="https://api.papermc.io/v2/projects/${PROJECT}/versions/${MINECRAFT_VERSION}/builds/${LATEST_BUILD}/downloads/${JAR_NAME}"
 
             # Download the latest Paper version
-            curl -o "$SERVER_DIR/paper.jar" "$PAPERMC_URL" || { echo "[ERROR] Failed to download PaperMC"; exit 1; }
+            curl -o "$SERVER_DIR/paper.jar" "$PAPERMC_URL" || { echo -e "${RED}[ERROR]${RESET} Failed to download PaperMC"; exit 1; }
         else
-            echo "[ERROR] No stable paper build for version $MINECRAFT_VERSION found"; exit 1
+            echo -e "${RED}[ERROR]${RESET} No stable paper build for version $MINECRAFT_VERSION found"; exit 1
         fi
     fi
-    tmux new -d -s minecraft "java -Xmx$ram_allocation -Xms$ram_allocation -jar $SERVER_DIR/paper.jar nogui" || { echo "[ERROR] Failed to start Minecraft server"; exit 1; }
+    tmux new -d -s minecraft "java -Xmx$ram_allocation -Xms$ram_allocation -jar $SERVER_DIR/paper.jar nogui" || { echo -e "${RED}[ERROR]${RESET} Failed to start Minecraft server"; exit 1; }
 }
 
 # Start Tmate and Send Credentials
 function setup_tmate {
-    echo "[INFO] Setting up remote SSH access with Tmate..."
-    tmux new -d -s tmate_session "tmate -F" || { echo "[ERROR] Failed to start Tmate"; exit 1; }
+    echo -e "${CYAN}[INFO]${RESET} Setting up remote SSH access with Tmate..."
+    # Specify a unique socket file for tmate session
+    TMATE_SOCKET="/tmp/tmate_session.sock"
+    tmux new -d -s tmate_session "tmate -S $TMATE_SOCKET new-session -d" || { echo -e "${RED}[ERROR]${RESET} Failed to start Tmate"; exit 1; }
     sleep 5
-    tmate show-messages | grep "web session" | mail -s "Minecraft Server Access" "$email" || { echo "[ERROR] Failed to send Tmate access email"; exit 1; }
+    # Retrieve Tmate session link and send it via email
+    tmate -S $TMATE_SOCKET wait tmate-ready || { echo -e "${RED}[ERROR]${RESET} Failed to wait for tmate-ready"; exit 1; }
+    Tmate_URL=$(tmate -S $TMATE_SOCKET display -p '#{web_url}')
+    echo -e "${CYAN}[INFO]${RESET} Sending Tmate access link to $email..."
+    echo "Minecraft server is ready. Access it remotely via: $Tmate_URL" | msmtp -a default "$email" || { echo -e "${RED}[ERROR]${RESET} Failed to send Tmate access email"; exit 1; }
 }
 
 # Run all functions
@@ -180,4 +194,4 @@ setup_email
 setup_minecraft_server
 setup_tmate
 
-echo "[INFO] Setup complete! Your Minecraft server is now running."
+echo -e "${CYAN}[INFO]${RESET} Setup complete! Your Minecraft server is now running."
