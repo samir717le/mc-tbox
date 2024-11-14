@@ -18,6 +18,7 @@ echo "[INFO] Gathering user input..."
 read -p "Enter your email for receiving SSH credentials and notifications: " email
 read -p "Enter your preferred SMTP server (gmail/yahoo/custom): " smtp_server
 read -p "Enter Playit token (leave blank if you need help getting it): " playit_token
+read -p "Enter papermc version: " MINECRAFT_VERSION
 read -p "Enter your preferred server RAM allocation (e.g., 2G): " ram_allocation
 # Confirm information
 
@@ -28,6 +29,7 @@ function conf_info {
     echo "SSH & Notification Info E-mail: $email"
     echo "SMTP Server: $smtp_server"
     echo "Playit Token: $playit_token"
+    echo "Papermc Version: $MINECRAFT_VERSION"
     echo "Server RAM Allocation: $ram_allocation"
     echo
     read -p "Is this information correct ([Y]/n): " inf_check
@@ -57,7 +59,7 @@ function install_dependencies {
             echo "[INFO] Installing tur-repo..."
             apt install -y "tur-repo" || { echo "[ERROR] Failed to install tur-repo"; exit 1; }
     fi
-    pkgs=(openjdk-17 tmux playit tmate msmtp curl wget termux-tools)
+    pkgs=(openjdk-17 tmux playit tmate msmtp curl wget termux-tools jq)
     for pkg in "${pkgs[@]}"; do
         if ! dpkg -s "$pkg" &>/dev/null; then
             echo "[INFO] Installing $pkg..."
