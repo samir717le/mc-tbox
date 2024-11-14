@@ -21,6 +21,7 @@ read -p "Enter Playit token (leave blank if you need help getting it): " playit_
 read -p "Enter your preferred server RAM allocation (e.g., 2G): " ram_allocation
 # Confirm information
 
+ 
 function conf_info {
     clear
     echo "Information Confirmation"
@@ -29,17 +30,24 @@ function conf_info {
     echo "Playit Token: $playit_token"
     echo "Server RAM Allocation: $ram_allocation"
     echo
-    read -p "Is this information correct([Y]/n): " inf_check
+    read -p "Is this information correct ([Y]/n): " inf_check
     case $inf_check in
-         y) true ;;
-         n) 
-         echo "[INFO] Re-enter user input..."
-         read -p "Enter your email for receiving SSH credentials and notifications: " email
-         read -p "Enter your preferred SMTP server (gmail/yahoo/custom): " smtp_server
-         read -p "Enter Playit token (leave blank if you need help getting it): " playit_token
-         read -p "Enter your preferred server RAM allocation (e.g., 2G): " ram_allocation
-         ;;
-         *) true;;
+        [Yy]*) 
+            true
+            ;;
+        [Nn]*) 
+            echo "[INFO] Re-enter user input..."
+            read -p "Enter your email for receiving SSH credentials and notifications: " email
+            read -p "Enter your preferred SMTP server (gmail/yahoo/custom): " smtp_server
+            read -p "Enter Playit token (leave blank if you need help getting it): " playit_token
+            read -p "Enter your preferred server RAM allocation (e.g., 2G): " ram_allocation
+            # Recursive call to conf_info to confirm the newly entered info
+            conf_info
+            ;;
+        *) 
+            true
+            ;;
+    esac
 }
 
 # Check and Install Dependencies
