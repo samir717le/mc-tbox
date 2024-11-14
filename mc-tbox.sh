@@ -18,37 +18,24 @@ echo "[INFO] Gathering user input..."
 read -p "Enter your email for receiving SSH credentials and notifications: " email
 read -p "Enter your preferred SMTP server (gmail/yahoo/custom): " smtp_server
 read -p "Enter Playit token (leave blank if you need help getting it): " playit_token
-read -p "Enter papermc version: " MINECRAFT_VERSION
+read -p "Enter PaperMC version (e.g., 1.19): " MINECRAFT_VERSION
 read -p "Enter your preferred server RAM allocation (e.g., 2G): " ram_allocation
-# Confirm information
 
- 
+# Confirm information
 function conf_info {
     clear
     echo "Information Confirmation"
     echo "SSH & Notification Info E-mail: $email"
     echo "SMTP Server: $smtp_server"
     echo "Playit Token: $playit_token"
-    echo "Papermc Version: $MINECRAFT_VERSION"
+    echo "PaperMC Version: $MINECRAFT_VERSION"
     echo "Server RAM Allocation: $ram_allocation"
     echo
     read -p "Is this information correct ([Y]/n): " inf_check
     case $inf_check in
-        [Yy]*) 
-            true
-            ;;
-        [Nn]*) 
-            echo "[INFO] Re-enter user input..."
-            read -p "Enter your email for receiving SSH credentials and notifications: " email
-            read -p "Enter your preferred SMTP server (gmail/yahoo/custom): " smtp_server
-            read -p "Enter Playit token (leave blank if you need help getting it): " playit_token
-            read -p "Enter your preferred server RAM allocation (e.g., 2G): " ram_allocation
-            # Recursive call to conf_info to confirm the newly entered info
-            conf_info
-            ;;
-        *) 
-            true
-            ;;
+        [Yy]*) ;;
+        [Nn]*) conf_info ;;
+        *) ;;
     esac
 }
 
@@ -56,8 +43,8 @@ function conf_info {
 function install_dependencies {
     echo "[INFO] Checking system dependencies..."
     if ! dpkg -s "tur-repo" &>/dev/null; then
-            echo "[INFO] Installing tur-repo..."
-            apt install -y "tur-repo" || { echo "[ERROR] Failed to install tur-repo"; exit 1; }
+        echo "[INFO] Installing tur-repo..."
+        apt install -y "tur-repo" || { echo "[ERROR] Failed to install tur-repo"; exit 1; }
     fi
     pkgs=(openjdk-17 tmux playit tmate msmtp curl wget termux-tools jq)
     for pkg in "${pkgs[@]}"; do
@@ -95,29 +82,61 @@ function setup_email {
     case $smtp_server in
         "gmail")
             echo "[INFO] Configuring Gmail SMTP..."
-            echo "mail.smtp.host=smtp.gmail.com" > ~/.msmtprc
-            echo "mail.smtp.port=587" >> ~/.msmtprc
-            echo "mail.smtp.auth=on" >> ~/.msmtprc
-            echo "mail.smtp.starttls=on" >> ~/.msmtprc
+            read -p "Enter your Gmail user/email: " guser
+            read -p "Enter Your Gmail password/app password: " gpass
+            echo "
+account default
+host smtp.gmail.com
+port 587
+auth on
+user $guser
+password $gpass
+tls on
+tls_trust_file /data/data/com.termux/files/usr/etc/tls/cert.pem
+
+account default : default
+            " > ~/.msmtprc
             ;;
         "yahoo")
             echo "[INFO] Configuring Yahoo SMTP..."
-            echo "mail.smtp.host=smtp.mail.yahoo.com" > ~/.msmtprc
-            echo "mail.smtp.port=587" >> ~/.msmtprc
-            echo "mail.smtp.auth=on" >> ~/.msmtprc
-            echo "mail.smtp.starttls=on" >> ~/.msmtprc
+            read -p "Enter your Yahoo user/email: " yuser
+            read -p "Enter Your Yahoo password/app password: " ypass
+            echo "
+account default
+host smtp.mail.yahoo.com
+port 587
+auth on
+user $yuser
+password $ypass
+tls on
+tls_trust_file /data/data/com.termux/files/usr/etc/tls/cert.pem
+
+account default : default
+            " > ~/.msmtprc
             ;;
         "custom")
             read -p "Enter your custom SMTP server address: " custom_smtp
-            echo "mail.smtp.host=$custom_smtp" > ~/.msmtprc
-            echo "mail.smtp.port=587" >> ~/.msmtprc
-            echo "mail.smtp.auth=on" >> ~/.msmtprc
-            echo "mail.smtp.starttls=on" >> ~/.msmtprc
+            read -p "Enter your custom SMTP port: " custom_port
+            read -p "Enter your custom SMTP username: " cuser
+            read -p "Enter your custom SMTP password: " cpass
+            echo "
+account default
+host $custom_smtp
+port $custom_port
+auth on
+user $cuser
+password $cpass
+tls on
+tls_trust_file /data/data/com.termux/files/usr/etc/tls/cert.pem
+
+account default : default
+            " > ~/.msmtprc
             ;;
         *)
             echo "[ERROR] Unsupported SMTP server"; exit 1;
             ;;
     esac
+    chmod 600 ~/.msmtprc
 }
 
 # Setup Minecraft Server with Tmux
@@ -129,19 +148,17 @@ function setup_minecraft_server {
         PROJECT="paper"
 
         LATEST_BUILD=$(curl -s https://api.papermc.io/v2/projects/${PROJECT}/versions/${MINECRAFT_VERSION}/builds | \
-    jq -r '.builds | map(select(.channel == "default") | .build) | .[-1]')
+        jq -r '.builds | map(select(.channel == "default") | .build) | .[-1]')
 
         if [ "$LATEST_BUILD" != "null" ]; then
-           JAR_NAME=${PROJECT}-${MINECRAFT_VERSION}-${LATEST_BUILD}.jar
-           PAPERMC_URL="https://api.papermc.io/v2/projects/${PROJECT}/versions/${MINECRAFT_VERSION}/builds/${LATEST_BUILD}/downloads/${JAR_NAME}"
+            JAR_NAME=${PROJECT}-${MINECRAFT_VERSION}-${LATEST_BUILD}.jar
+            PAPERMC_URL="https://api.papermc.io/v2/projects/${PROJECT}/versions/${MINECRAFT_VERSION}/builds/${LATEST_BUILD}/downloads/${JAR_NAME}"
 
-           # Download the latest Paper version
-            curl -o paper.jar $PAPERMC_URL
-            echo "Download completed"
-         else
-          echo "[ERROR] No stable paper build for version $MINECRAFT_VERSION found :(" 
-          exit 1
-        fi 
+            # Download the latest Paper version
+            curl -o "$SERVER_DIR/paper.jar" "$PAPERMC_URL" || { echo "[ERROR] Failed to download PaperMC"; exit 1; }
+        else
+            echo "[ERROR] No stable paper build for version $MINECRAFT_VERSION found"; exit 1
+        fi
     fi
     tmux new -d -s minecraft "java -Xmx$ram_allocation -Xms$ram_allocation -jar $SERVER_DIR/paper.jar nogui" || { echo "[ERROR] Failed to start Minecraft server"; exit 1; }
 }
@@ -154,67 +171,13 @@ function setup_tmate {
     tmate show-messages | grep "web session" | mail -s "Minecraft Server Access" "$email" || { echo "[ERROR] Failed to send Tmate access email"; exit 1; }
 }
 
-# Monitor Server Health
-function monitor_health {
-    echo "[INFO] Starting server health monitoring..."
-    while true; do
-        CPU=$(top -bn1 | grep load | awk '{printf "%.2f", $(NF-2)}')
-        MEM=$(free -m | awk '/Mem:/ {printf "%3.1f", $3/$2*100}')
-        if [[ "$CPU" > 80.0 || "$MEM" > 90.0 ]]; then
-            echo "[ALERT] High CPU or Memory usage!" | mail -s "Minecraft Server Health Alert" "$email" || { echo "[ERROR] Failed to send health alert"; exit 1; }
-        fi
-        sleep 60
-    done
-}
-
-# Log Rotation and Backup
-function setup_logging_backup {
-    LOG_DIR="$HOME/mc-logs"
-    BACKUP_DIR="$HOME/mc-backups"
-    if [[ ! -d "$LOG_DIR" ]]; then
-        mkdir "$LOG_DIR"
-    fi
-    if [[ ! -d "$BACKUP_DIR" ]]; then
-        mkdir "$BACKUP_DIR"
-    fi
-    echo "[INFO] Log rotation and backup configured."
-}
-
-# Backup the Minecraft Server Data
-function backup_minecraft_server {
-    echo "[INFO] Starting server backup..."
-    BACKUP_FILE="$BACKUP_DIR/mc-backup-$(date +'%Y%m%d%H%M').tar.gz"
-    tar -czf "$BACKUP_FILE" -C "$SERVER_DIR" . || { echo "[ERROR] Backup failed"; exit 1; }
-    echo "[INFO] Backup created: $BACKUP_FILE"
-}
-
-# Create Termux Boot Script
-function create_termux_boot_script {
-    echo "[INFO] Creating Termux:Boot startup script..."
-    BOOT_SCRIPT="$HOME/.termux/boot/mc-tbox-startup.sh"
-    echo "#!/bin/bash" > "$BOOT_SCRIPT"
-    echo "cd $HOME/mc-server" >> "$BOOT_SCRIPT"
-    echo "tmux new -d -s minecraft 'java -Xmx$ram_allocation -Xms$ram_allocation -jar $HOME/mc-server/paper.jar nogui'" >> "$BOOT_SCRIPT"
-    chmod +x "$BOOT_SCRIPT"
-    echo "[INFO] Termux:Boot startup script created at $BOOT_SCRIPT"
-}
-
 # Run all functions
-conf_inf
+conf_info
 install_dependencies
 check_system_compatibility
-#configure_playit
+configure_playit
 setup_email
 setup_minecraft_server
 setup_tmate
-monitor_health &
-setup_logging_backup
-create_termux_boot_script
-
-# Backup every 24 hours
-while true; do
-    backup_minecraft_server
-    sleep 86400  # 24 hours
-done
 
 echo "[INFO] Setup complete! Your Minecraft server is now running."
