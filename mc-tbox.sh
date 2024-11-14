@@ -124,7 +124,22 @@ function setup_minecraft_server {
     SERVER_DIR="$HOME/mc-server"
     if [[ ! -d "$SERVER_DIR" ]]; then
         mkdir -p "$SERVER_DIR"
-        wget -O "$SERVER_DIR/paper.jar" https://papermc.io/api/v2/projects/paper/versions/latest/builds/latest/downloads/paper-latest.jar || { echo "[ERROR] Failed to download PaperMC"; exit 1; }
+        PROJECT="paper"
+
+        LATEST_BUILD=$(curl -s https://api.papermc.io/v2/projects/${PROJECT}/versions/${MINECRAFT_VERSION}/builds | \
+    jq -r '.builds | map(select(.channel == "default") | .build) | .[-1]')
+
+        if [ "$LATEST_BUILD" != "null" ]; then
+           JAR_NAME=${PROJECT}-${MINECRAFT_VERSION}-${LATEST_BUILD}.jar
+           PAPERMC_URL="https://api.papermc.io/v2/projects/${PROJECT}/versions/${MINECRAFT_VERSION}/builds/${LATEST_BUILD}/downloads/${JAR_NAME}"
+
+           # Download the latest Paper version
+            curl -o paper.jar $PAPERMC_URL
+            echo "Download completed"
+         else
+          echo "[ERROR] No stable paper build for version $MINECRAFT_VERSION found :(" 
+          exit 1
+        fi 
     fi
     tmux new -d -s minecraft "java -Xmx$ram_allocation -Xms$ram_allocation -jar $SERVER_DIR/paper.jar nogui" || { echo "[ERROR] Failed to start Minecraft server"; exit 1; }
 }
@@ -183,6 +198,7 @@ function create_termux_boot_script {
 }
 
 # Run all functions
+inf_check
 install_dependencies
 check_system_compatibility
 #configure_playit
