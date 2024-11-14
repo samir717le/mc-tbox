@@ -16,9 +16,31 @@ exec > >(tee -a "$LOG_FILE") 2>&1
 # Prompt user for input
 echo "[INFO] Gathering user input..."
 read -p "Enter your email for receiving SSH credentials and notifications: " email
-read -p "Enter your preferred SMTP server (Gmail/Yahoo/Custom): " smtp_server
+read -p "Enter your preferred SMTP server (gmail/yahoo/custom): " smtp_server
 read -p "Enter Playit token (leave blank if you need help getting it): " playit_token
 read -p "Enter your preferred server RAM allocation (e.g., 2G): " ram_allocation
+# Confirm information
+
+function conf_info {
+    clear
+    echo "Information Confirmation"
+    echo "SSH & Notification Info E-mail: $email"
+    echo "SMTP Server: $smtp_server"
+    echo "Playit Token: $playit_token"
+    echo "Server RAM Allocation: $ram_allocation"
+    echo
+    read -p "Is this information correct([Y]/n): " inf_check
+    case $inf_check in
+         y) true ;;
+         n) 
+         echo "[INFO] Re-enter user input..."
+         read -p "Enter your email for receiving SSH credentials and notifications: " email
+         read -p "Enter your preferred SMTP server (gmail/yahoo/custom): " smtp_server
+         read -p "Enter Playit token (leave blank if you need help getting it): " playit_token
+         read -p "Enter your preferred server RAM allocation (e.g., 2G): " ram_allocation
+         ;;
+         *) true;;
+}
 
 # Check and Install Dependencies
 function install_dependencies {
@@ -61,21 +83,21 @@ function configure_playit {
 function setup_email {
     echo "[INFO] Setting up email notifications..."
     case $smtp_server in
-        "Gmail")
+        "gmail")
             echo "[INFO] Configuring Gmail SMTP..."
             echo "mail.smtp.host=smtp.gmail.com" > ~/.msmtprc
             echo "mail.smtp.port=587" >> ~/.msmtprc
             echo "mail.smtp.auth=on" >> ~/.msmtprc
             echo "mail.smtp.starttls=on" >> ~/.msmtprc
             ;;
-        "Yahoo")
+        "yahoo")
             echo "[INFO] Configuring Yahoo SMTP..."
             echo "mail.smtp.host=smtp.mail.yahoo.com" > ~/.msmtprc
             echo "mail.smtp.port=587" >> ~/.msmtprc
             echo "mail.smtp.auth=on" >> ~/.msmtprc
             echo "mail.smtp.starttls=on" >> ~/.msmtprc
             ;;
-        "Custom")
+        "custom")
             read -p "Enter your custom SMTP server address: " custom_smtp
             echo "mail.smtp.host=$custom_smtp" > ~/.msmtprc
             echo "mail.smtp.port=587" >> ~/.msmtprc
